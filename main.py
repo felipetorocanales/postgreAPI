@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # --- CONFIGURACIÓN DE DB ---
-DATABASE_URL = "postgresql+psycopg2://felipe_dev:felipe1234@localhost:5432/ventas_db_"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
