@@ -1,70 +1,48 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from typing import List
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, Numeric
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-import os
+from database import SessionLocal, engine, Base
+import models
 
-# --- CONFIGURACIÓN DE DB ---
-DATABASE_URL = os.getenv("DATABASE_URL")
+app = FastAPI()
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
+# Crear tablas si no existen
+Base.metadata.create_all(bind=engine)
 
-# --- MODELO DE TABLA ---
-class Venta(Base):
-    __tablename__ = "ventas"
-    id = Column(Integer, primary_key=True, index=True)
-    fecha = Column(Date, nullable=False)
-    producto = Column(String, nullable=False)
-    cantidad = Column(Integer, nullable=False)
-    precio = Column(Numeric(10, 2), nullable=False)
+# Dependencia para abrir/cerrar la DB en cada request
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# --- SCHEMA Pydantic ---
-class VentaSchema(BaseModel):
+# Pydantic para validar datos de entrada
+class VentaCreate(BaseModel):
     fecha: str
     producto: str
     cantidad: int
     precio: float
 
-    class Config:
-        orm_mode = True
-
-# --- APP FastAPI ---
-app = FastAPI(title="Ventas API")
-
-# Crear tablas si no existen
-Base.metadata.create_all(bind=engine)
-
-# --- ENDPOINTS ---
-@app.get("/ventas")
-def get_ventas():
-    db = SessionLocal()
-    ventas = db.query(Venta).all()
-    db.close()
-    return ventas
-
-@app.post("/ventas")
-def create_venta(venta: VentaSchema):
-    db = SessionLocal()
-    nueva = Venta(
-        fecha=venta.fecha,
-        producto=venta.producto,
-        cantidad=venta.cantidad,
-        precio=venta.precio
-    )
-    db.add(nueva)
+# Crear una venta
+@app.post("/ventas/")
+def create_venta(venta: VentaCreate, db: Session = Depends(get_db)):
+    db_venta = models.Venta(**venta.dict())
+    db.add(db_venta)
     db.commit()
-    db.refresh(nueva)
-    db.close()
-    return nueva
+    db.refresh(db_venta)
+    return db_venta
 
-@app.get("/ventas/{venta_id}")
-def get_venta(venta_id: int):
-    db = SessionLocal()
-    venta = db.query(Venta).filter(Venta.id == venta_id).first()
-    db.close()
-    if not venta:
-        raise HTTPException(status_code=404, detail="Venta no encontrada")
-    return venta
+# Crear varias ventas a la vez
+@app.post("/ventas/bulk")
+def create_ventas_bulk(ventas: List[VentaCreate], db: Session = Depends(get_db)):
+    db_ventas = [models.Venta(**venta.dict()) for venta in ventas]
+    db.add_all(db_ventas)
+    db.commit()
+    return {"insertados": len(db_ventas)}
+
+# Obtener todas las ventas
+@app.get("/ventas/")
+def get_ventas(db: Session = Depends(get_db)):
+    return db.query(models.Venta).all()
