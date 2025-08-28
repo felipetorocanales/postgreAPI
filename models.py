@@ -5,7 +5,7 @@ class Venta(Base):
     __tablename__ = "ventas"
 
     id = Column(Integer, primary_key=True, index=True)
-    fecha = Column(String, index=True)  # si quieres exactitud usa Date
+    fecha = Column(Date, index=True)  # si quieres exactitud usa Date
     producto = Column(String, index=True)
     cantidad = Column(Integer)
     precio = Column(Float)
