@@ -9,3 +9,13 @@ class Venta(Base):
     producto = Column(String, index=True)
     cantidad = Column(Integer)
     precio = Column(Float)
+
+class Venta_etl(Base):
+    __tablename__ = "ventas_etl"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(Date, index=True)  # si quieres exactitud usa Date
+    producto = Column(String, index=True)
+    cantidad = Column(Integer)
+    precio = Column(Float)
+    total = Column(Float)

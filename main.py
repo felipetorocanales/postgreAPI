@@ -46,3 +46,8 @@ def create_ventas_bulk(ventas: List[VentaCreate], db: Session = Depends(get_db))
 @app.get("/ventas/")
 def get_ventas(db: Session = Depends(get_db)):
     return db.query(models.Venta).all()
+
+# Obtener todas las ventas
+@app.get("/ventas_etl/")
+def get_ventas(db: Session = Depends(get_db)):
+    return db.query(models.Venta).all()
