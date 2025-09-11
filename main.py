@@ -50,4 +50,4 @@ def get_ventas(db: Session = Depends(get_db)):
 # Obtener todas las ventas
 @app.get("/ventas_etl/")
 def get_ventas(db: Session = Depends(get_db)):
-    return db.query(models.Venta).all()
+    return db.query(models.Venta_etl).all()
